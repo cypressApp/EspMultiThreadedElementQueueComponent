@@ -54,7 +54,9 @@
         "ostream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "cerrno": "cpp",
+        "*.tpp": "cpp"
     },
     "idf.flashType": "UART",
     "idf.port": "/dev/ttyUSB0"

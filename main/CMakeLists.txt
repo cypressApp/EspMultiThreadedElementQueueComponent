@@ -1,17 +1,13 @@
 
 file(GLOB_RECURSE WIFI_SOURCES components/wifi/*.cpp)
+file(GLOB_RECURSE TCP_SOURCES components/tcp/*.cpp)
+
+set(CMAKE_CXX_STANDARD 20)
 
 idf_component_register(SRCS 
 
-# "adc_handler.c"
-# "StationMode.c"
-# "AccessPointMode.c"
-# "TcpServer.c"
-# "wifi_info_handler.c"
 "main.cpp"
 ${WIFI_SOURCES}
-# "params.c"
-# "constants.c"
-# "str_lib.c"
-# "GPIO.c"
-                       INCLUDE_DIRS ".")
+${TCP_SOURCES}
+
+INCLUDE_DIRS ".")

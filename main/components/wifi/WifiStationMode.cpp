@@ -1,18 +1,11 @@
 #include "WifiStationMode.hpp"
+#include "../tcp/TcpServerClass.hpp"
 
-// EventGroupHandle_t s_wifi_event_group;
+using namespace std;
 
-// int  s_retry_num      = 0    ;
-// bool all_sockets_init = false;
-// char ssid_arg[128];
-// char pass_arg[128];
+const string WifiStationMode::TAG = "WifiStationMode";
 
-// bool isConnectedToWifi = false;
-// int xre4 = 0;
-
-#define TAG "WifiStationMode"
-
-#define CYP_LOG(fmt, ...) ESP_LOGI(TAG, fmt, ##__VA_ARGS__)
+#define CYP_LOG(fmt, ...) ESP_LOGI((WifiStationMode::TAG).c_str(), fmt, ##__VA_ARGS__)
 
 void WifiStationMode::event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
@@ -24,10 +17,10 @@ void WifiStationMode::event_handler(void* arg, esp_event_base_t event_base, int3
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         self->isConnectedToWifi = false;
-        // if (s_retry_num < EXAMPLE_ESP_MAXIMUM_RETRY) {
-             esp_wifi_connect();
+        // if (s_retry_num < ESP_MAXIMUM_RETRY) {
+            esp_wifi_connect();
         //     s_retry_num++;
-        CYP_LOG("retry to connect to the AP");           
+            CYP_LOG("retry to connect to the AP");           
         // } else {
         //     xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
         // }
@@ -87,7 +80,7 @@ void WifiStationMode::event_handler(void* arg, esp_event_base_t event_base, int3
             self->all_sockets_init = true;
             // Enable TCP Server
            // xTaskCreate(tcp_server_task, "tcp_server", TCP_SERVER_TASK_STACK_DEPTH  , (void*)AF_INET, 5, NULL);
-           
+           xSemaphoreGive(TcpServerClass::tcpServerSemaphore);
         }
 
 #endif        
