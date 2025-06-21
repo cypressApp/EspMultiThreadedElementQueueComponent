@@ -1,0 +1,14 @@
+# Ignore the CMake build directory
+build/
+managed_components/
+
+# Ignore virtual environment
+venv/
+
+# Ignore generated config header
+autoconf.h
+
+# Optional: Python cache files
+__pycache__/
+*.pyc
+*.pyo
