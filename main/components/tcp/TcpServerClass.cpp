@@ -54,23 +54,26 @@ void TcpServerClass::tcp_send_to_clients(char *data , int len){
 
 void TcpServerClass::process_tcp_data(char* rx_value , int accountIndex , int sock){
 
-    customQueue[accountIndex].push(1 , 0 , false);
+    int pushValue = -1;
 
-    printf("Size: %d\n" , customQueue[accountIndex].getSize());
+    if(sscanf(rx_value, "push(%d)" , &pushValue) == 1){
+        if(customQueue[accountIndex].push(pushValue , 10 , true) == CustomQueue<int>::OP_SUCCESS){
+            string response = "push: " + to_string(pushValue) + "\n";
+            send(tcpAccount[accountIndex].sock, (response.c_str()), response.length(), 0);
+        }
+        
+    }else if(string(rx_value) == "pop()"){
+        optional<int> popValue = customQueue[accountIndex].pop(10 , true);
+        if(popValue.has_value()){
+            string response = "pop: " + to_string(popValue.value()) + "\n";
+            send(tcpAccount[accountIndex].sock, (response.c_str()), response.length(), 0);
+        }
+        
+    }else if(string(rx_value) == "size"){
+        string response = "size: " + to_string(customQueue[accountIndex].getSize()) + "\n";
+        send(tcpAccount[accountIndex].sock, (response.c_str()), response.length(), 0);
+    }
 
-//     if(strcmp(rx_value , ON_VALUE) == 0){
-// #ifdef TCP_TEST_MODE        
-//         printf("on\n");
-// #endif        
-//         gpio_set_level(GPIO_OUTPUT_1 , 1);
-//         tcp_send_to_clients(ON_RESPONSE , 2);
-//     }else if(strcmp(rx_value , OFF_VALUE) == 0){
-// #ifdef TCP_TEST_MODE          
-//         printf("off\n");
-// #endif        
-//         gpio_set_level(GPIO_OUTPUT_1 , 0);
-//         tcp_send_to_clients(OFF_RESPONSE , 3);
-//     }   
 }
 
 void TcpServerClass::check_tcp_recv_timeout_task(void *pvParameters){
@@ -87,7 +90,6 @@ void TcpServerClass::check_tcp_recv_timeout_task(void *pvParameters){
         tcp_rec_data_counter = 0;
         is_tcp_timeout = true;
     }
-
 
     vTaskDelete(NULL);
 }
