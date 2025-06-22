@@ -30,16 +30,46 @@ class WifiStationMode{
 
 public:
 
-    int s_retry_num;
     bool all_sockets_init;
-    char ssid_arg[128];
-    char pass_arg[128];
+
+    /**
+     * @brief handle wifi connection events
+     * 
+     * This function is called when the wifi connection status changes (e.g. connected, disconnected, ...) 
+     *  
+     */
 
     static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-    void update_wifi_ip_sta();
+    
+    /**
+     * @brief configure the device to station mode 
+     * 
+     * In station mode the device tries to connect to the router.
+     * the router cridention should be done in configuration. (ROUTER_SSID, ROUTER_PASS)
+     * 
+     */
     void wifi_init_sta();
 
+    /**
+     * @brief task entity
+     * 
+     * This is an static function to run freeRTOS task in c++.
+     * 
+     */
     static void task_entry(void *pvParamters);
+
+    /**
+     * @brief run task
+     * 
+     * freeRTOS task runs this function.
+     * 
+     */
     void run();
+    /**
+     * @brief task initialization
+     * 
+     * This function initializes freeRTOS task in this function. 
+     * 
+     */
     void start();
 };

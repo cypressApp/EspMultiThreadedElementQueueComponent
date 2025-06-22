@@ -23,36 +23,19 @@ esp_err_t init_nvs_flash(){
 
 void app_main(){
 
-//     init_tcp_server();    
+  if(init_nvs_flash() != ESP_OK){
+    printf("#\r\nERROR NVS FLASH\r\n#\r\n");
+  }
 
-//     init_mac_address();
+  WifiStationMode *wifiStationMode = new WifiStationMode();
+  wifiStationMode->start();
 
-//     init_gpio_pins();
+  TcpServerClass *tcpServerClass = new TcpServerClass();
+  tcpServerClass->start();
 
-	if(init_nvs_flash() != ESP_OK){
-		printf("#\r\nERROR NVS FLASH\r\n#\r\n");
-	}
-
-// #ifdef STA_MODE
-//     sprintf(ssid_arg , ROUTER_SSID);
-//     sprintf(pass_arg , ROUTER_PASS);
-//     xTaskCreate(wifi_init_sta, "wifi_init_sta_task", WIFI_STA_MODE_TASK_STACK_DEPTH, NULL, 5, NULL);
-// #elif AP_MODE
-//     wifi_init_accesspoint_mode();
-//     xTaskCreate(tcp_server_task, "tcp_server", TCP_SERVER_TASK_STACK_DEPTH, (void*)AF_INET, 5, NULL);
-// #endif
-
-    WifiStationMode *wifiStationMode = new WifiStationMode();
-    wifiStationMode->start();
-
-    TcpServerClass *tcpServerClass = new TcpServerClass();
-    tcpServerClass->start();
-
-    cout << "Main cpp" << endl;
-    
-    while(1){
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
+  while(1){
+      vTaskDelay(10 / portTICK_PERIOD_MS);
+  }
 
 }
 

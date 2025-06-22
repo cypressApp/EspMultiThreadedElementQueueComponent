@@ -73,13 +73,15 @@ class CustomQueue{
      * @brief function call counter which is helpful to check if any race condition has been happened
      */
     std::atomic<int> counter;
+
+    static const int MAX_QUEUE_SIZE = 5;
     
 public:
 
     static const int OP_SUCCESS = 0;
     static const int OP_FAIL = 1;
 
-    CustomQueue(size_t maxSize = 5);
+    CustomQueue(size_t maxSize = CustomQueue::MAX_QUEUE_SIZE);
     
 
     /**

@@ -12,10 +12,7 @@ using namespace std;
 
 class WifiInfoClass{
 
-    static const string ESP_AP_WIFI_PASS; 
     static const string DEVICE_MAC_ADDRESS_STR;
-    static const string ESP_AP_WIFI_SSID;
-
     uint8_t device_mac_address[10] = {0};
 
 public:
@@ -25,11 +22,13 @@ public:
 
     esp_netif_t *p_netif;
 
-    uint32_t get_device_ip_info_int();
-    uint32_t get_gateway_ip_info_int();
-    void get_gateway_ip_info_array(int *array , uint32_t gateway_ip);
-    void update_wifi_mode_ip(int tempIpSlice);
+    /**
+     * @brief set mac address of devide
+     * 
+     * This function get the mac address in configuration (DEVICE_MAC_ADDRESS_STR) 
+     * and the relevant register of the device 
+     * 
+     */
     void init_mac_address();
-    int  get_ip4(char *addr_str , int len);
 
 };

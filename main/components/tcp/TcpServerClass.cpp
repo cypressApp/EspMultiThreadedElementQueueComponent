@@ -17,7 +17,7 @@ const int TcpServerClass::TCP_PORT = 1234;
 const string TcpServerClass::TCP_RECEIVE_DATA_SUFFIX = "\n";
 const int TcpServerClass::TCP_RECEIVE_DATA_SUFFIX_LENGTH = 1;
 
-void TcpServerClass::init() {
+void TcpServerClass::initSemaphore() {
     tcpServerSemaphore = xSemaphoreCreateBinary();
     if (tcpServerSemaphore == nullptr) {
         CYP_LOGE("Failed to create semaphore");
@@ -31,25 +31,9 @@ void TcpServerClass::task_entry(void *pvParamters){
     self->run();
 }
 
-void TcpServerClass::init_tcp_server(){
+void TcpServerClass::initTcpServer(){
     tcpAccount = new TcpAccount[MAX_TCP_ACCOUNT_SIZE];
     customQueue = new CustomQueue<int>[MAX_TCP_ACCOUNT_SIZE]; 
-}
-
-void TcpServerClass::tcp_send_to_clients(char *data , int len){
-  
-    // for(int i = 0 ; i < MAX_TCP_ACCOUNT_SIZE ; i++){
-
-    //     if(account_struct_list[i].sock != -1){
-
-    //         if(account_struct_list[i].ip4 > 0 && account_struct_list[i].ip4 < 255){
-    //             send(account_struct_list[i].sock, data, len, 0);
-    //         }            
-            
-    //     }
-
-    // }
-
 }
 
 void TcpServerClass::process_tcp_data(char* rx_value , int accountIndex , int sock){
@@ -76,40 +60,18 @@ void TcpServerClass::process_tcp_data(char* rx_value , int accountIndex , int so
 
 }
 
-void TcpServerClass::check_tcp_recv_timeout_task(void *pvParameters){
-
-    while(tcp_timeout_counter < 100){
-        if(!valid_data_received){
-            tcp_timeout_counter ++;
-            vTaskDelay(1 / portTICK_PERIOD_MS);
-        }else{
-            break;
-        }
-    }
-    if(!valid_data_received){
-        tcp_rec_data_counter = 0;
-        is_tcp_timeout = true;
-    }
-
-    vTaskDelete(NULL);
-}
-
-void TcpServerClass::run_receiving_tcp_data(int accountIndex , int sock){
+void TcpServerClass::runReceivingTcpData(int accountIndex , int sock){
 
     char temp_rx_buffer[5];
     char rx_buffer[TcpServerClass::TCP_RECEIVE_DATA_LENGTH];
 
-    valid_data_received = true;
     vTaskDelay(2 / portTICK_PERIOD_MS);
-    valid_data_received = false;
-    tcp_timeout_counter = 0;
     tcp_rec_data_counter = 0;
-    is_tcp_timeout      = false;
 
     while (1) {
-        //vTaskDelay(50 / portTICK_RATE_MS);
+
 #ifdef CONSTANT_TCP_RECEIVE_LEN        
-        int len = recv(sock, rx_buffer, TCP_RECEIVE_DATA_LENGTH , 0);
+        int len = recv(sock, rx_buffer, TcpServerClass::TCP_RECEIVE_DATA_LENGTH , 0);
 #else        
         int len = recv(sock, temp_rx_buffer, 1 , 0);
         tcp_rec_data_counter ++;
@@ -128,11 +90,11 @@ void TcpServerClass::run_receiving_tcp_data(int accountIndex , int sock){
         else {
 
 #ifdef CONSTANT_TCP_RECEIVE_LEN        
-            char temp_rx_buffer[TCP_RECEIVE_DATA_LENGTH + 1] = {0};
-            for(int i = 0 ; i < TCP_RECEIVE_DATA_LENGTH ; i++){
+            char temp_rx_buffer[TcpServerClass::TCP_RECEIVE_DATA_LENGTH + 1] = {0};
+            for(int i = 0 ; i < TcpServerClass::TCP_RECEIVE_DATA_LENGTH ; i++){
                 temp_rx_buffer[i] = rx_buffer[i];
             }
-            temp_rx_buffer[TCP_RECEIVE_DATA_LENGTH] = 0;
+            temp_rx_buffer[TcpServerClass::TCP_RECEIVE_DATA_LENGTH] = 0;
             process_tcp_data(temp_rx_buffer , sock);
 #else        
             rx_buffer[tcp_rec_data_counter - 1] = temp_rx_buffer[0];
@@ -143,23 +105,12 @@ void TcpServerClass::run_receiving_tcp_data(int accountIndex , int sock){
                         
                         rx_buffer[tcp_rec_data_counter - TcpServerClass::TCP_RECEIVE_DATA_SUFFIX_LENGTH] = 0; 
                         tcp_rec_data_counter = 0;
-                        CYP_LOGI("%s   %d", rx_buffer , sizeof(rx_buffer));
-                        valid_data_received = true;
+                        CYP_LOGI("%s", rx_buffer);
 
                         process_tcp_data(rx_buffer , accountIndex , sock);
                         vTaskDelay(1 / portTICK_PERIOD_MS);
 
-                    }else if(tcp_rec_data_counter == 1){
-                        valid_data_received = false;
-                        tcp_timeout_counter = 0;
-                        is_tcp_timeout = false;
-                       // xTaskCreate(check_tcp_recv_timeout_task, "check_tcp_recv_timeout", CHECK_TCP_TIMEOUT_TASK_STACK_DEPTH, NULL , 5, NULL);
                     }
-            }else if(tcp_rec_data_counter == 1){
-                valid_data_received = false;
-                tcp_timeout_counter = 0;
-                is_tcp_timeout = false;
-               // xTaskCreate(check_tcp_recv_timeout_task, "check_tcp_recv_timeout", CHECK_TCP_TIMEOUT_TASK_STACK_DEPTH, NULL , 5, NULL);
             }
 
 #endif  
@@ -251,8 +202,6 @@ void TcpServerClass::run(){
                 inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
             }
             
-            CYP_LOGI("Account list size: %d\n" , account_list_size);
-            
             int ipArray[4];
             if(sscanf(addr_str, "%d.%d.%d.%d", &ipArray[0], &ipArray[1], &ipArray[2], &ipArray[3]) != 4){
                 continue;
@@ -273,7 +222,7 @@ void TcpServerClass::run(){
                     receiveTcpStruct.tcpServer = this;
                     receiveTcpStruct.sock = sock;
                     receiveTcpStruct.account_index = tempIndex;
-                    xTaskCreate(TcpServerClass::receive_tcp_entry, "receiving_tcp_data", 1024, &receiveTcpStruct , 5, NULL); 
+                    xTaskCreate(TcpServerClass::receiveTcpEntry, "receiving_tcp_data", 1024, &receiveTcpStruct , 5, NULL); 
 
                     CYP_LOGI("Socket Exist");                  
                 }else{
@@ -287,21 +236,22 @@ void TcpServerClass::run(){
     }
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
-    // xTaskCreate(tcp_server_task, "tcp_server", TCP_SERVER_TASK_STACK_DEPTH, (void*)AF_INET, 5, NULL);
     vTaskDelete(NULL);
 }
 
 void TcpServerClass::start(){
-    TcpServerClass::init();
+
+    TcpServerClass::initSemaphore();
     xSemaphoreTake(tcpServerSemaphore , portMAX_DELAY);
 
-    init_tcp_server();
+    initTcpServer();
 
     xTaskCreate(TcpServerClass::task_entry, "tcp_server", 20480  , this, 1, NULL);
+
 }
 
-void TcpServerClass::receive_tcp_entry(void *pvParamters){
+void TcpServerClass::receiveTcpEntry(void *pvParamters){
     ReceiveTcpStruct *self = static_cast<ReceiveTcpStruct*>(pvParamters);
-    self->tcpServer->run_receiving_tcp_data(self->account_index , self->sock);
+    self->tcpServer->runReceivingTcpData(self->account_index , self->sock);
 }
 

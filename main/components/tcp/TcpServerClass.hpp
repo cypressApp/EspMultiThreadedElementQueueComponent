@@ -7,49 +7,22 @@ extern "C"{
     #include "freertos/FreeRTOS.h"
     #include "freertos/semphr.h"  
     #include "esp_log.h"
-
     #include "freertos/task.h"
-    #include "freertos/event_groups.h"
-    #include "esp_system.h"
-    #include "driver/uart.h"
-    #include "string.h"
-    #include <string.h>
     #include <stdio.h>
-    #include <math.h>
-    #include "driver/gpio.h"
-    #include "esp_mac.h"
-    #include "nvs_flash.h"
-    #include "esp_partition.h"
-    #include "esp_ota_ops.h"
-    #include <sys/param.h>
-    #include "esp_netif.h"
-    #include "esp_event.h"
-    #include "driver/touch_pad.h"
-    #include <stdlib.h>
-    #include "soc/soc_caps.h"
-    #include "esp_adc/adc_oneshot.h"
-    #include "esp_adc/adc_cali.h"
-    #include "esp_adc/adc_cali_scheme.h"
-    #include "esp_wifi.h"
-    #include "esp_err.h"
-    #include "esp_check.h"
-    #include "lwip/err.h"
-    #include "lwip/sys.h"
-
-    #include "sdkconfig.h"
     #include "lwip/inet.h"
     #include "lwip/netdb.h"
-    #include "lwip/sockets.h"
-    #include "esp_console.h"
-    #include "argtable3/argtable3.h"
-    #include "ping/ping_sock.h"
-
     #include "lwip/sockets.h"
     #include "esp_netif.h"
 }
 
 using namespace std;
 
+/**
+ * @brief tcp account class
+ * 
+ * this class is used to store all information of connected client
+ *  
+ */
 class TcpAccount{
 
 public:
@@ -58,14 +31,8 @@ public:
         sock = -1;
     }
 
-    int  account_id;  
-    char username[128];
-    char password[8];
-    int  is_admin;
-    int  is_enable;
     int  sock;
     int  ip4; 
-    char lockPassword[128];
 
 };
 
@@ -82,36 +49,88 @@ public:
     static const string TCP_RECEIVE_DATA_SUFFIX;
     static const int TCP_RECEIVE_DATA_SUFFIX_LENGTH ;
 
-    int  tcp_timeout_counter  = 0    ;
-    int  tcp_rec_data_counter = 0    ;
-    bool is_tcp_timeout       = false;
-    bool valid_data_received  = false;
-    // struct account_struct account_struct_list[MAX_TCP_ACCOUNT_SIZE];
+    int  tcp_rec_data_counter = 0;
     TcpAccount *tcpAccount;
-    int account_list_size = 0;
     CustomQueue<int> *customQueue;
+    /**
+     * @brief object initialization
+     * 
+     * Some of the property of the object of class are initialized.
+     * 
+     */
+    void initTcpServer();
 
-    void init_tcp_server();
-    void execute_tcp_send(char *data);
-    void send_assign_slave_id_response(int sock , char *response);
-    void tcp_send_to_clients(char *data , int len);
-    void process_tcp_data(char* rx_buffer , int accountIndex , int sock);
-    void remove_tcp_sock_from_list(int index);
-    void tcp_server_task(void *pvParameters);
+    /**
+     * @brief semaphore initialization
+     * 
+     * this semaphore is used syncronation wifi connection and tcp server socket.
+     * 
+     */
+    static void initSemaphore();
+    
+    /**
+     * @brief get unused socket
+     * 
+     * This function return an unused socket in the account list
+     * 
+     */
     optional<int> is_unused_tcp_socket_exist(int ip);
-    void run_receiving_tcp_data(int accountIndex , int sock);
-    void check_tcp_recv_timeout_task(void *pvParameters);
+    
+    /**
+     * @brief process received data from client
+     * 
+     * The received data is process to extract commands (e.g. push, pop, size)
+     * 
+     */
+    void process_tcp_data(char* rx_buffer , int accountIndex , int sock);
+    
+    /**
+     * @brief tcp receive data handler
+     * 
+     * This function wait for data from client
+     * 
+     */
+    void runReceivingTcpData(int accountIndex , int sock);
+    
+    /**
+     * @brief receive data entry
+     * 
+     * this function run receive data handler in another task
+     * 
+     */
+    static void receiveTcpEntry(void *pvParamters);
 
-    static void init();
-
-    static void receive_tcp_entry(void *pvParamters);
-
+    /**
+     * @brief task entity
+     * 
+     * This is an static function to run freeRTOS task in c++.
+     * 
+     */
     static void task_entry(void *pvParamters);
+
+    /**
+     * @brief run task
+     * 
+     * freeRTOS task runs this function.
+     * 
+     */
     void run();
+    /**
+     * @brief task initialization
+     * 
+     * This function initializes freeRTOS task in this function. 
+     * 
+     */
     void start();
 
 };
 
+/**
+ * @brief task params struct
+ * 
+ * This struct is used to pass the required params to run the freeRTOS task
+ * 
+ */
 typedef struct {
     TcpServerClass *tcpServer;
     int sock;
